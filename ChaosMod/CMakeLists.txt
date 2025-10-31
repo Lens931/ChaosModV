@@ -1,14 +1,14 @@
 cmake_minimum_required(VERSION 3.31)
 project(ChaosMod)
 
-file(GLOB ROOT_SRC ${PROJECT_SOURCE_DIR}/*.cpp)
-file(GLOB_RECURSE SRC ${PROJECT_SOURCE_DIR}/Components/*.cpp ${PROJECT_SOURCE_DIR}/Effects/*.cpp
-    ${PROJECT_SOURCE_DIR}/Memory/*.cpp ${PROJECT_SOURCE_DIR}/Util/*.cpp)
-file(GLOB PATTERNS_SRC ${PROJECT_SOURCE_DIR}/../vendor/Patterns/Patterns.cpp)
+file(GLOB ROOT_SRC ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+file(GLOB_RECURSE SRC ${CMAKE_CURRENT_SOURCE_DIR}/Components/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Effects/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Memory/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Util/*.cpp)
+file(GLOB PATTERNS_SRC ${CMAKE_CURRENT_SOURCE_DIR}/../vendor/Patterns/Patterns.cpp)
 add_library(ChaosMod MODULE ${ROOT_SRC} ${SRC} ${PATTERNS_SRC} ChaosMod.rc)
 
-file (STRINGS ${PROJECT_SOURCE_DIR}/../version.txt MOD_VERSION)
-configure_file(${PROJECT_SOURCE_DIR}/InfoTEMPLATE.h.in ${PROJECT_SOURCE_DIR}/Info.h @ONLY)
+file (STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/../version.txt MOD_VERSION)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/InfoTEMPLATE.h.in ${CMAKE_CURRENT_SOURCE_DIR}/Info.h @ONLY)
 
 target_precompile_headers(ChaosMod PUBLIC stdafx.cpp)
 
@@ -18,23 +18,23 @@ set_target_properties(ChaosMod PROPERTIES CXX_SCAN_FOR_MODULES OFF)
 
 target_compile_definitions(ChaosMod PUBLIC $<$<CONFIG:Debug>:CHAOSDEBUG> NDEBUG WIN32_LEAN_AND_MEAN SOL_ALL_SAFETIES_ON SOL_DEFAULT_PASS_ON_ERROR)
 
-set(include_dirs ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/../vendor ${PROJECT_SOURCE_DIR}/../vendor/lua/include)
+set(include_dirs ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../vendor ${CMAKE_CURRENT_SOURCE_DIR}/../vendor/lua/include)
 set(link_libs shv minhook lua54 winmm d3dcompiler xinput)
 
-add_subdirectory(${PROJECT_SOURCE_DIR}/../vendor/shv shv)
-add_subdirectory(${PROJECT_SOURCE_DIR}/../vendor/minhook minhook)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../vendor/shv shv)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../vendor/minhook minhook)
 if (WITH_DEBUG_PANEL_SUPPORT)
-    set(include_dirs ${include_dirs} ${PROJECT_SOURCE_DIR}/../vendor/IXWebSocket)
+    set(include_dirs ${include_dirs} ${CMAKE_CURRENT_SOURCE_DIR}/../vendor/IXWebSocket)
     set(link_libs ${link_libs} wsock32 ws2_32 ixwebsocket)
 
     target_compile_definitions(ChaosMod PUBLIC WITH_DEBUG_PANEL_SUPPORT)
 
     set(USE_ZLIB OFF CACHE BOOL "Enable zlib support")
-    add_subdirectory(${PROJECT_SOURCE_DIR}/../vendor/IXWebSocket ixwebsocket)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../vendor/IXWebSocket ixwebsocket)
 endif ()
 
 target_include_directories(ChaosMod PUBLIC ${include_dirs})
-target_link_directories(ChaosMod PUBLIC ${PROJECT_SOURCE_DIR}/../vendor/lua)
+target_link_directories(ChaosMod PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../vendor/lua)
 target_link_libraries(ChaosMod PUBLIC ${link_libs})
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
