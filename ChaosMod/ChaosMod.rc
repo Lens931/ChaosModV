@@ -38,6 +38,7 @@ BEGIN
 	"\0"
 END
 
+// Support for GTA V build 3258 (required for game build 3258 compatibility in FiveM)
 FX_ASI_BUILD 3258
 BEGIN
 	"\0"
