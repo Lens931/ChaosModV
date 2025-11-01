@@ -3,9 +3,9 @@
 #include "Components/Component.h"
 #include "Effects/EffectIdentifier.h"
 
-#include <mutex>
 #include <queue>
 #include <unordered_map>
+#include "Sync/Lock.h"
 
 using DWORD = unsigned long;
 
@@ -13,8 +13,9 @@ class EffectShortcuts : public Component
 {
 	std::unordered_map<int, std::vector<EffectIdentifier>> m_AvailableShortcuts;
 
-	std::queue<EffectIdentifier> m_EffectQueue;
-	std::mutex m_EffectQueueMtx;
+        std::queue<EffectIdentifier> m_EffectQueue;
+        // fiber-safe: removed STL mutex
+        SrwLock m_EffectQueueLock;
 
   public:
 	EffectShortcuts();

@@ -5,7 +5,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <mutex>
+#include "Sync/Lock.h"
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -18,14 +18,15 @@ inline std::ofstream g_ConsoleOut;
 
 inline const auto g_ModStartTime = std::time(nullptr);
 
-inline std::mutex g_LogMutex;
+// fiber-safe: removed STL mutex
+inline SrwLock g_LogLock;
 
-#define _LOG(_text, _stream)                                 \
-	do                                                       \
-	{                                                        \
-		const std::lock_guard<std::mutex> lock(g_LogMutex);  \
-		_stream << _text;                                    \
-	} while (0)
+#define _LOG(_text, _stream)         \
+        do                               \
+        {                                \
+                AutoLock _g(g_LogLock);   \
+                _stream << _text;          \
+        } while (0)
 
 #define RAW_LOG(_text)          \
 	do                          \

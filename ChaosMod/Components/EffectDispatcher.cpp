@@ -20,6 +20,11 @@
 #define EFFECT_TEXT_TOP_SPACING_EXTRA .35f
 #define EFFECT_NONTIMED_TIMER_SPEEDUP_MIN_EFFECTS 3
 
+namespace
+{
+bool g_StartedStopping = false; // fiber-safe: removed function-local static
+}
+
 static void _DispatchEffect(EffectDispatcher *effectDispatcher, const EffectDispatcher::EffectDispatchEntry &entry)
 {
 	auto &effectData = g_EnabledEffects.at(entry.Id);
@@ -285,18 +290,16 @@ void EffectDispatcher::UpdateEffects(float deltaTime)
 		m_PermanentEffects.clear();
 		SharedState.DispatchedEffectsLog.clear();
 
-		static bool startedStopping = false;
-		
-		if (!startedStopping)
-		{
-			EffectThreads::StopThreadsImmediately();
-			startedStopping = true;
-		}
+                if (!g_StartedStopping)
+                {
+                        EffectThreads::StopThreadsImmediately();
+                        g_StartedStopping = true;
+                }
 
-		if (EffectThreads::GetThreadCount() > 0)
-			return;
+                if (EffectThreads::GetThreadCount() > 0)
+                        return;
 
-		startedStopping = false;
+                g_StartedStopping = false;
 
 		// Ensure player control isn't stuck in disabled state
 		SET_PLAYER_CONTROL(PLAYER_ID(), true, 0);

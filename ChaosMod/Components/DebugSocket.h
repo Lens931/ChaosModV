@@ -10,16 +10,17 @@
 #include <functional>
 #include <list>
 #include <memory>
-#include <mutex>
 #include <queue>
 #include <string_view>
 #include <unordered_map>
+#include "Sync/Lock.h"
 
 class DebugSocket : public Component
 {
   public:
-	std::queue<std::function<void()>> m_DelegateQueue;
-	std::mutex m_DelegateQueueMutex;
+        std::queue<std::function<void()>> m_DelegateQueue;
+        // fiber-safe: removed STL mutex
+        SrwLock m_DelegateQueueLock;
 
 	bool m_IsProfiling = false;
 	struct EffectTraceStats
