@@ -23,7 +23,7 @@ EffectSound3D::EffectSound3D()
 
 			    if (GetTickCount64() > m_ThreadPingTimestamp + 100)
 			    {
-				    std::lock_guard lock(m_SoundsMutex);
+                                AutoLock lock(m_SoundsLock); // fiber-safe: removed STL mutex
 				    for (auto &[soundId, sound] : m_Sounds)
 					    ma_sound_stop(&sound.Handle);
 			    }
@@ -75,7 +75,7 @@ void EffectSound3D::OnRun()
 	ma_engine_listener_set_velocity(&m_maEngine, 0, adjPlayerVel.x, adjPlayerVel.y, adjPlayerVel.z);
 
 	int activeSounds = 0;
-	std::lock_guard lock(m_SoundsMutex);
+    AutoLock lock(m_SoundsLock); // fiber-safe: removed STL mutex
 	// Reverse order to ensure the first sounds are removed if MAX_ACTIVE_SOUNDS has been reached
 	for (auto it = m_Sounds.rbegin(); it != m_Sounds.rend();)
 	{

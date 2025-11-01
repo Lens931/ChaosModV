@@ -16,7 +16,7 @@ void EffectShortcuts::OnRun()
 {
 	if (!m_EffectQueue.empty())
 	{
-		std::lock_guard lock(m_EffectQueueMtx);
+            AutoLock lock(m_EffectQueueLock); // fiber-safe: removed STL mutex
 		while (!m_EffectQueue.empty())
 		{
 			auto &id = m_EffectQueue.front();
@@ -39,7 +39,7 @@ void EffectShortcuts::OnKeyInput(DWORD key, bool repeated, bool isUpNow, bool is
 
 	if (m_AvailableShortcuts.contains(key))
 	{
-		std::lock_guard lock(m_EffectQueueMtx);
+            AutoLock lock(m_EffectQueueLock); // fiber-safe: removed STL mutex
 		for (auto &effectId : m_AvailableShortcuts.at(key))
 			m_EffectQueue.push(effectId);
 	}

@@ -17,8 +17,8 @@ using nlohmann::json;
 
 static void QueueDelegate(DebugSocket *debugSocket, std::function<void()> delegate)
 {
-	std::lock_guard lock(debugSocket->m_DelegateQueueMutex);
-	debugSocket->m_DelegateQueue.push(delegate);
+        AutoLock lock(debugSocket->m_DelegateQueueLock); // fiber-safe: removed STL mutex
+        debugSocket->m_DelegateQueue.push(delegate);
 }
 
 static void OnFetchEffects(DebugSocket *debugSocket, std::shared_ptr<ix::ConnectionState> connectionState,
@@ -278,7 +278,7 @@ void DebugSocket::OnRun()
 {
 	if (!m_DelegateQueue.empty())
 	{
-		std::lock_guard lock(m_DelegateQueueMutex);
+            AutoLock lock(m_DelegateQueueLock); // fiber-safe: removed STL mutex
 		while (!m_DelegateQueue.empty())
 		{
 			m_DelegateQueue.front()();

@@ -16,7 +16,7 @@ set_target_properties(ChaosMod PROPERTIES SUFFIX ".asi")
 set_target_properties(ChaosMod PROPERTIES CXX_STANDARD 20)
 set_target_properties(ChaosMod PROPERTIES CXX_SCAN_FOR_MODULES OFF)
 
-target_compile_definitions(ChaosMod PUBLIC $<$<CONFIG:Debug>:CHAOSDEBUG> NDEBUG WIN32_LEAN_AND_MEAN SOL_ALL_SAFETIES_ON SOL_DEFAULT_PASS_ON_ERROR)
+target_compile_definitions(ChaosMod PUBLIC $<$<CONFIG:Debug>:CHAOSDEBUG> NDEBUG WIN32_LEAN_AND_MEAN NOMINMAX _DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR SOL_ALL_SAFETIES_ON SOL_DEFAULT_PASS_ON_ERROR)
 
 set(include_dirs ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../vendor ${CMAKE_CURRENT_SOURCE_DIR}/../vendor/lua/include)
 set(link_libs shv minhook lua54 winmm d3dcompiler xinput)
@@ -38,7 +38,9 @@ target_link_directories(ChaosMod PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../vendor/lu
 target_link_libraries(ChaosMod PUBLIC ${link_libs})
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    target_compile_options(ChaosMod PUBLIC /Zi /GT /W2 /WX /bigobj -DUNICODE -D_UNICODE -DNOMINMAX -D_CRT_SECURE_NO_WARNINGS)
+    target_compile_options(ChaosMod PUBLIC /Zi /GT /W2 /WX /bigobj /Zc:threadSafeInit- /EHsc -DUNICODE -D_UNICODE -DNOMINMAX -D_CRT_SECURE_NO_WARNINGS)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
+    target_compile_definitions(ChaosMod PUBLIC WIN32_LEAN_AND_MEAN NOMINMAX _DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
     target_link_options(ChaosMod PUBLIC /DEBUG /OPT:REF /OPT:ICF)
 else()
     target_compile_options(ChaosMod PUBLIC -municode -Wa,-mbig-obj -flarge-source-files -Werror -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unused-variable -Wno-maybe-uninitialized -Wno-array-bounds -Wno-unused-but-set-variable)

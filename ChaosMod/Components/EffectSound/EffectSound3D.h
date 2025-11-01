@@ -7,8 +7,8 @@
 
 #include <cstdint>
 #include <map>
-#include <mutex>
 #include <string>
+#include "Sync/Lock.h"
 
 class EffectSound3D : public EffectSoundManager
 {
@@ -20,8 +20,9 @@ class EffectSound3D : public EffectSoundManager
 		ma_sound Handle;
 		EffectSoundPlayOptions PlayOptions;
 	};
-	std::map<DWORD64, Sound> m_Sounds;
-	std::mutex m_SoundsMutex;
+        std::map<DWORD64, Sound> m_Sounds;
+        // fiber-safe: removed STL mutex
+        SrwLock m_SoundsLock;
 	bool m_IsStopping = false;
 	std::thread m_PauseSoundsThread;
 	uint64_t m_ThreadPingTimestamp;
