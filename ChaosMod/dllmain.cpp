@@ -17,20 +17,19 @@ BOOL APIENTRY DllMain(HMODULE instance, DWORD reason, LPVOID reserved)
 
 		RAW_LOG("Chaos Mod v" MOD_VERSION "\n\n");
 
-		Memory::Init();
+                scriptRegister(instance, Main::OnRun);
 
-		scriptRegister(instance, Main::OnRun);
+                keyboardHandlerRegister(Main::OnKeyboardInput);
 
-		keyboardHandlerRegister(Main::OnKeyboardInput);
+                break;
+        }
+        case DLL_PROCESS_DETACH:
+                if (Main::IsMemoryInitialized())
+                        Memory::Uninit();
 
-		break;
-	}
-	case DLL_PROCESS_DETACH:
-		Memory::Uninit();
+                scriptUnregister(instance);
 
-		scriptUnregister(instance);
-
-		keyboardHandlerUnregister(Main::OnKeyboardInput);
+                keyboardHandlerUnregister(Main::OnKeyboardInput);
 
 		if (GetConsoleWindow())
 		{
