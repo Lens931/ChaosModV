@@ -20,11 +20,21 @@
 #include "Effects/EffectConfig.h"
 #include "Effects/EnabledEffects.h"
 #include "Memory/Hooks/ScriptThreadRunHook.h"
+#include "Memory/Memory.h"
 #include "Memory/Misc.h"
 #include "Util/File.h"
 #include "Util/OptionsManager.h"
 #include "Util/PoolSpawner.h"
 #include "Util/Text.h"
+
+#include <atomic>
+#include <mutex>
+
+namespace
+{
+	std::once_flag g_MemoryInitOnce;
+	std::atomic<bool> g_MemoryInitialized = false;
+}
 
 static struct
 {
@@ -341,6 +351,13 @@ namespace Main
 	{
 		SetUnhandledExceptionFilter(CrashHandler);
 
+		std::call_once(g_MemoryInitOnce,
+		               []()
+		               {
+			Memory::Init();
+			g_MemoryInitialized.store(true, std::memory_order_release);
+		});
+
 		if (!ms_ModuleHandle && DoesFileExist("ScriptHookV.dev"))
 		{
 			WCHAR fileName[MAX_PATH] = {};
@@ -427,4 +444,10 @@ namespace Main
 	{
 		ms_Flags.DisableMod = true;
 	}
+	bool IsMemoryInitialized()
+	{
+		return g_MemoryInitialized.load(std::memory_order_acquire);
+	}
 }
+}
+
