@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Memory/Memory.h"
+#include "game.h"
 
 #include <scripthookv/inc/natives.h>
 #include <scripthookv/inc/types.h>

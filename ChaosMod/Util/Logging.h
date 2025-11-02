@@ -5,10 +5,11 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include "Sync/Lock.h"
+#include "../include/Sync/Lock.h"
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <ctime>
 
 #define CHAOS_LOG_FILE "chaosmod/chaoslog.txt"
 
