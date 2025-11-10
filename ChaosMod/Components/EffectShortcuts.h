@@ -5,7 +5,7 @@
 
 #include <queue>
 #include <unordered_map>
-#include "Sync/Lock.h"
+#include "../include/Sync/Lock.h"
 
 using DWORD = unsigned long;
 
