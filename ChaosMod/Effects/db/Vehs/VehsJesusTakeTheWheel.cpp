@@ -13,8 +13,11 @@ CHAOS_VAR Ped ms_JesusPed = 0;
 CHAOS_VAR Hash ms_JesusRelationshipGroup = 0;
 CHAOS_VAR Vehicle ms_LastJesusVehicle    = 0;
 CHAOS_VAR std::uint64_t ms_LastJesusVehicleBaseAddr = 0;
+CHAOS_VAR Hash ms_JesusCurrentTaskHash              = 0;
 
 static constexpr Hash kJesusModelHash = -835930287;
+static constexpr Hash kTaskDriveToCoordLongRangeHash = 0x158BB33F920D360C;
+static constexpr Hash kTaskDriveWanderHash           = 0x480142959D337D00;
 
 static void AssignDrivingTask(Ped jesus, Vehicle veh)
 {
@@ -42,9 +45,15 @@ static void AssignDrivingTask(Ped jesus, Vehicle veh)
         }
 
         if (found)
+        {
                 TASK_VEHICLE_DRIVE_TO_COORD_LONGRANGE(jesus, veh, coords.x, coords.y, coords.z, 9999.f, 262668, 0.f);
+                ms_JesusCurrentTaskHash = kTaskDriveToCoordLongRangeHash;
+        }
         else
+        {
                 TASK_VEHICLE_DRIVE_WANDER(jesus, veh, 9999.f, 4176732);
+                ms_JesusCurrentTaskHash = kTaskDriveWanderHash;
+        }
 
         SET_PED_KEEP_TASK(jesus, true);
         SET_BLOCKING_OF_NON_TEMPORARY_EVENTS(jesus, true);
@@ -112,6 +121,7 @@ static void OnStart()
         ms_LastJesusVehicle         = 0;
         ms_LastJesusVehicleBaseAddr = 0;
         ms_JesusRelationshipGroup   = 0;
+        ms_JesusCurrentTaskHash     = 0;
 
         Ped playerPed = PLAYER_PED_ID();
 
@@ -152,6 +162,7 @@ static void OnStop()
         ms_JesusPed                 = 0;
         ms_LastJesusVehicle         = 0;
         ms_LastJesusVehicleBaseAddr = 0;
+        ms_JesusCurrentTaskHash     = 0;
 }
 
 static void OnTick()
@@ -168,6 +179,11 @@ static void OnTick()
         if (!veh)
                 return;
 
+        if (GET_PED_IN_VEHICLE_SEAT(veh, -1, false) == playerPed)
+        {
+                SeatPlayerAsPassenger(playerPed, veh);
+        }
+
         std::uint64_t vehBaseAddr = Memory::GetScriptHandleBaseAddress(veh);
 
         if (veh != ms_LastJesusVehicle
@@ -176,6 +192,12 @@ static void OnTick()
             || GET_PED_IN_VEHICLE_SEAT(veh, -1, false) != ms_JesusPed)
         {
                 EnsureJesusInVehicle(playerPed, veh);
+        }
+        else if (ms_JesusCurrentTaskHash != 0
+                 && GET_SCRIPT_TASK_STATUS(ms_JesusPed, ms_JesusCurrentTaskHash) != 1)
+        {
+                CLEAR_PED_TASKS(ms_JesusPed);
+                AssignDrivingTask(ms_JesusPed, veh);
         }
 }
 
