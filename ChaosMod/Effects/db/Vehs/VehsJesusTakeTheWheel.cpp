@@ -4,11 +4,15 @@
 
 #include <stdafx.h>
 
+#include <cstdint>
+
 #include "Effects/Register/RegisterEffect.h"
+#include "Memory/Entity.h"
 
 CHAOS_VAR Ped ms_JesusPed = 0;
 CHAOS_VAR Hash ms_JesusRelationshipGroup = 0;
 CHAOS_VAR Vehicle ms_LastJesusVehicle    = 0;
+CHAOS_VAR std::uint64_t ms_LastJesusVehicleBaseAddr = 0;
 
 static constexpr Hash kJesusModelHash = -835930287;
 
@@ -98,14 +102,16 @@ static void EnsureJesusInVehicle(Ped playerPed, Vehicle veh)
         CLEAR_PED_TASKS(ms_JesusPed);
         AssignDrivingTask(ms_JesusPed, veh);
 
-        ms_LastJesusVehicle = veh;
+        ms_LastJesusVehicle        = veh;
+        ms_LastJesusVehicleBaseAddr = Memory::GetScriptHandleBaseAddress(veh);
 }
 
 static void OnStart()
 {
-        ms_JesusPed               = 0;
-        ms_LastJesusVehicle       = 0;
-        ms_JesusRelationshipGroup = 0;
+        ms_JesusPed                 = 0;
+        ms_LastJesusVehicle         = 0;
+        ms_LastJesusVehicleBaseAddr = 0;
+        ms_JesusRelationshipGroup   = 0;
 
         Ped playerPed = PLAYER_PED_ID();
 
@@ -143,8 +149,9 @@ static void OnStop()
                 ms_JesusRelationshipGroup = 0;
         }
 
-        ms_JesusPed         = 0;
-        ms_LastJesusVehicle = 0;
+        ms_JesusPed                 = 0;
+        ms_LastJesusVehicle         = 0;
+        ms_LastJesusVehicleBaseAddr = 0;
 }
 
 static void OnTick()
@@ -161,7 +168,11 @@ static void OnTick()
         if (!veh)
                 return;
 
-        if (veh != ms_LastJesusVehicle || !DOES_ENTITY_EXIST(ms_JesusPed) || IS_PED_DEAD_OR_DYING(ms_JesusPed, true)
+        std::uint64_t vehBaseAddr = Memory::GetScriptHandleBaseAddress(veh);
+
+        if (veh != ms_LastJesusVehicle
+            || (vehBaseAddr != 0 && vehBaseAddr != ms_LastJesusVehicleBaseAddr) || !DOES_ENTITY_EXIST(ms_JesusPed)
+            || IS_PED_DEAD_OR_DYING(ms_JesusPed, true)
             || GET_PED_IN_VEHICLE_SEAT(veh, -1, false) != ms_JesusPed)
         {
                 EnsureJesusInVehicle(playerPed, veh);
