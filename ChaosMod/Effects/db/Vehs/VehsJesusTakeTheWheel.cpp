@@ -50,7 +50,7 @@ static void SeatPlayerAsPassenger(Ped playerPed, Vehicle veh)
 {
         SET_PED_INTO_VEHICLE(playerPed, veh, -2);
 
-        if (GET_PED_IN_VEHICLE_SEAT(veh, -1) != playerPed)
+        if (GET_PED_IN_VEHICLE_SEAT(veh, -1, false) != playerPed)
                 return;
 
         int maxPassengers = GET_VEHICLE_MAX_NUMBER_OF_PASSENGERS(veh);
@@ -58,7 +58,7 @@ static void SeatPlayerAsPassenger(Ped playerPed, Vehicle veh)
         {
                 SET_PED_INTO_VEHICLE(playerPed, veh, seatIndex);
 
-                if (GET_PED_IN_VEHICLE_SEAT(veh, -1) != playerPed)
+                if (GET_PED_IN_VEHICLE_SEAT(veh, -1, false) != playerPed)
                         return;
         }
 }
@@ -162,7 +162,7 @@ static void OnTick()
                 return;
 
         if (veh != ms_LastJesusVehicle || !DOES_ENTITY_EXIST(ms_JesusPed) || IS_PED_DEAD_OR_DYING(ms_JesusPed, true)
-            || GET_PED_IN_VEHICLE_SEAT(veh, -1) != ms_JesusPed)
+            || GET_PED_IN_VEHICLE_SEAT(veh, -1, false) != ms_JesusPed)
         {
                 EnsureJesusInVehicle(playerPed, veh);
         }

@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <map>
 #include <string>
-#include "Sync/Lock.h"
+#include "../../include/Sync/Lock.h"
 
 class EffectSound3D : public EffectSoundManager
 {

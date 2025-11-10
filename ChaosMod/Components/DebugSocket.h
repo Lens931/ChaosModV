@@ -13,7 +13,7 @@
 #include <queue>
 #include <string_view>
 #include <unordered_map>
-#include "Sync/Lock.h"
+#include "../include/Sync/Lock.h"
 
 class DebugSocket : public Component
 {
