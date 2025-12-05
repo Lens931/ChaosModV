@@ -7,6 +7,13 @@ file(GLOB_RECURSE SRC ${CMAKE_CURRENT_SOURCE_DIR}/Components/*.cpp ${CMAKE_CURRE
 file(GLOB PATTERNS_SRC ${CMAKE_CURRENT_SOURCE_DIR}/../vendor/Patterns/Patterns.cpp)
 add_library(ChaosMod MODULE ${ROOT_SRC} ${SRC} ${PATTERNS_SRC} ChaosMod.rc)
 
+if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    # Ensure every target (including dependencies) links against the dynamic runtime for
+    # FiveM fiber compatibility. The value must be set before adding subdirectories so the
+    # vendor projects inherit it.
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
+endif ()
+
 file (STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/../version.txt MOD_VERSION)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/InfoTEMPLATE.h.in ${CMAKE_CURRENT_SOURCE_DIR}/Info.h @ONLY)
 
@@ -39,7 +46,6 @@ target_link_libraries(ChaosMod PUBLIC ${link_libs})
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     target_compile_options(ChaosMod PUBLIC /Zi /GT /W2 /WX /bigobj /Zc:threadSafeInit- /EHsc -DUNICODE -D_UNICODE -DNOMINMAX -D_CRT_SECURE_NO_WARNINGS)
-    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
     target_compile_definitions(ChaosMod PUBLIC WIN32_LEAN_AND_MEAN NOMINMAX _DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
     target_link_options(ChaosMod PUBLIC /DEBUG /OPT:REF /OPT:ICF)
 else()
