@@ -283,13 +283,18 @@ namespace Memory
                                 // FiveM renamed its core modules in newer builds (e.g. b3570 uses adhesive.dll
                                 // and ros-patches-five.dll). Check for a handful of known module names instead of
                                 // only the legacy gta-net-five.dll so we can correctly detect FiveM across builds.
-                                static const std::array<const wchar_t *, 6> modules = { {
+                                static const std::array<const wchar_t *, 10> modules = { {
                                         L"gta-net-five.dll",
                                         L"gta-core-five.dll",
                                         L"net-five.dll",
                                         L"adhesive.dll",
                                         L"citizen-resources-client.dll",
                                         L"ros-patches-five.dll",
+                                        // Additional FiveM modules observed in newer builds.
+                                        L"citizen-scripting-gta.dll",
+                                        L"citizen-scripting-core.dll",
+                                        L"citizen-scripting-lua.dll",
+                                        L"asi-five.dll",
                                 } };
 
                                 return std::any_of(modules.begin(), modules.end(), [](auto module) {
