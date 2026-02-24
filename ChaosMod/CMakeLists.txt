@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.31)
 project(ChaosMod)
 
+option(CHAOS_ENABLE_FIVEM_37XX "Enable FiveM 3717/3757 compatibility gates" ON)
+
 file(GLOB ROOT_SRC ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 file(GLOB_RECURSE SRC ${CMAKE_CURRENT_SOURCE_DIR}/Components/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Effects/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Memory/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Util/*.cpp)
@@ -24,6 +26,10 @@ set_target_properties(ChaosMod PROPERTIES CXX_STANDARD 20)
 set_target_properties(ChaosMod PROPERTIES CXX_SCAN_FOR_MODULES OFF)
 
 target_compile_definitions(ChaosMod PUBLIC $<$<CONFIG:Debug>:CHAOSDEBUG> NDEBUG WIN32_LEAN_AND_MEAN NOMINMAX _DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR SOL_ALL_SAFETIES_ON SOL_DEFAULT_PASS_ON_ERROR)
+
+if (CHAOS_ENABLE_FIVEM_37XX)
+    target_compile_definitions(ChaosMod PUBLIC CHAOS_ENABLE_FIVEM_37XX=1)
+endif ()
 
 set(include_dirs ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../vendor ${CMAKE_CURRENT_SOURCE_DIR}/../vendor/lua/include)
 set(link_libs shv minhook lua54 winmm d3dcompiler xinput)

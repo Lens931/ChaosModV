@@ -10,7 +10,6 @@
 #include "Util/Text.h"
 
 #include <algorithm>
-#include <array>
 
 static DWORD64 ms_BaseAddr;
 static DWORD64 ms_EndAddr;
@@ -117,6 +116,12 @@ namespace Memory
 
 				    const auto &hookName = registeredHook->GetName();
 
+				    if (!FiveMCompat::IsHookSupported(hookName.c_str()))
+				    {
+					LOG(hookName << " hook is disabled for " << FiveMCompat::GetClientBuildString());
+					continue;
+				    }
+
 				    if (ms_BlacklistedHookNames.contains(hookName))
 				    {
 					    LOG(hookName << " hook has been blacklisted from running!");
@@ -167,6 +172,12 @@ namespace Memory
 					    continue;
 
 				    const auto &hookName = registeredHook->GetName();
+
+				    if (!FiveMCompat::IsHookSupported(hookName.c_str()))
+				    {
+					LOG(hookName << " hook is disabled for " << FiveMCompat::GetClientBuildString());
+					continue;
+				    }
 
 				    if (ms_BlacklistedHookNames.contains(hookName))
 				    {
@@ -276,33 +287,10 @@ namespace Memory
 			return handle.At(2).Into().Get<DWORD64 *>();
 		}();
 
-                static auto fallbackToSHV = []() -> bool
-                {
-                        const auto isFiveM = []()
-                        {
-                                // FiveM renamed its core modules in newer builds (e.g. b3570 uses adhesive.dll
-                                // and ros-patches-five.dll). Check for a handful of known module names instead of
-                                // only the legacy gta-net-five.dll so we can correctly detect FiveM across builds.
-                                static const std::array<const wchar_t *, 10> modules = { {
-                                        L"gta-net-five.dll",
-                                        L"gta-core-five.dll",
-                                        L"net-five.dll",
-                                        L"adhesive.dll",
-                                        L"citizen-resources-client.dll",
-                                        L"ros-patches-five.dll",
-                                        // Additional FiveM modules observed in newer builds.
-                                        L"citizen-scripting-gta.dll",
-                                        L"citizen-scripting-core.dll",
-                                        L"citizen-scripting-lua.dll",
-                                        L"asi-five.dll",
-                                } };
-
-                                return std::any_of(modules.begin(), modules.end(), [](auto module) {
-                                        return GetModuleHandle(module) != nullptr;
-                                });
-                        };
-
-                        bool fallbackToSHV = !globalPtr;
+		static auto fallbackToSHV = []() -> bool
+		{
+			bool fallbackToSHV = !globalPtr;
+			DWORD64 _networkObj = 0;
 
                         if (fallbackToSHV)
                         {
@@ -310,28 +298,39 @@ namespace Memory
                         }
                         // HACK: Check for the presence some arbitrary module specific to FiveM
                         // Also check if player is in a mp session if so to check for FiveM sp
-                        else if (isFiveM())
-                        {
-                                bool modeDetermined = false;
+			else if (FiveMCompat::IsFiveMClient())
+			{
+				bool modeDetermined = false;
 
-                                auto handle         = FindPattern("48 8B 0D ? ? ? ? E8 ? ? ? ? 84 C0 74 09 48 8D 15");
-                                if (handle.IsValid())
-                                {
-                                        auto _networkObj = handle.At(2).Into().Get<DWORD64>();
-                                        handle           = FindPattern("83 B9 ? ? 00 00 05 0F 85 ? ? ? ? E9");
-                                        if (handle.IsValid())
-                                        {
-                                                fallbackToSHV  = *reinterpret_cast<DWORD *>(*_networkObj + handle.At(2).Value<WORD>()) == 5;
-                                                modeDetermined = true;
-                                        }
-                                }
+				auto handle = FindPattern("48 8B 0D ? ? ? ? E8 ? ? ? ? 84 C0 74 09 48 8D 15");
+				if (handle.IsValid())
+				{
+					_networkObj = handle.At(2).Into().Get<DWORD64>();
+					handle      = FindPattern("83 B9 ? ? 00 00 05 0F 85 ? ? ? ? E9");
+					if (handle.IsValid())
+					{
+						fallbackToSHV  = *reinterpret_cast<DWORD *>(*_networkObj + handle.At(2).Value<WORD>()) == 5;
+						modeDetermined = true;
+					}
+				}
 
-                                if (!modeDetermined)
-                                {
-                                        LOG("Warning: FiveM detected but could not determine mode, switching to fallback for GetGlobalPtr");
-                                        fallbackToSHV = true;
-                                }
-                        }
+				if (!modeDetermined)
+				{
+					const auto &offsets = FiveMCompat::GetNativeOffsetProfile();
+					if (offsets.NetworkStateOffset >= 0 && _networkObj)
+					{
+						// FiveM 3717/3757 fallback: use pre-mapped network-state offsets when the pattern drifts.
+						fallbackToSHV  = *reinterpret_cast<DWORD *>(*_networkObj + offsets.NetworkStateOffset) == 5;
+						modeDetermined = true;
+					}
+				}
+
+				if (!modeDetermined)
+				{
+					LOG("Warning: FiveM detected but could not determine mode, switching to fallback for GetGlobalPtr");
+					fallbackToSHV = true;
+				}
+			}
 
                         if (fallbackToSHV)
                                 LOG("Warning: FiveM (non-sp) detected, features such as Failsafe will not work!");

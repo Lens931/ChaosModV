@@ -70,6 +70,9 @@ static void Init()
 
 		LOG("Game Build: " << gameBuild);
 
+		// Central compatibility log for FiveM 3717/3757 and standalone GTA V.
+		FiveMCompat::LogCompatibilityReport();
+
 		return true;
 	}();
 
@@ -254,10 +257,10 @@ static void MainRun()
 		if (ms_Flags.RunAntiSoftlock)
 		{
 			ms_Flags.RunAntiSoftlock = false;
-			if (IS_SCREEN_FADED_OUT())
+			if (FiveMCompat::IsScreenFadedOut())
 			{
-				DO_SCREEN_FADE_IN(0);
-				SET_ENTITY_HEALTH(PLAYER_PED_ID(), 0, 0);
+				FiveMCompat::DoScreenFadeIn(0);
+				FiveMCompat::SetEntityHealth(PLAYER_PED_ID(), 0);
 			}
 		}
 
@@ -327,7 +330,7 @@ static void MainRun()
 			ClearEntityPool();
 		}
 
-		if (IS_SCREEN_FADED_OUT())
+		if (FiveMCompat::IsScreenFadedOut())
 		{
 			// Prevent potential softlock for certain effects
 			SET_TIME_SCALE(1.f);
@@ -360,9 +363,17 @@ namespace Main
 
 		if (!ms_ModuleHandle && DoesFileExist("ScriptHookV.dev"))
 		{
-			WCHAR fileName[MAX_PATH] = {};
-			GetModuleFileName(reinterpret_cast<HINSTANCE>(&__ImageBase), fileName, MAX_PATH);
-			ms_ModuleHandle = LoadLibrary(fileName);
+			if (FiveMCompat::IsFiveMClient())
+			{
+				// Modern FiveM limits ScriptHookV-style module side-loading. Keep runtime stable by skipping dev reloads.
+				LOG("Skipping ScriptHookV.dev hot-reload on FiveM (loader limitation)");
+			}
+			else
+			{
+				WCHAR fileName[MAX_PATH] = {};
+				GetModuleFileName(reinterpret_cast<HINSTANCE>(&__ImageBase), fileName, MAX_PATH);
+				ms_ModuleHandle = LoadLibrary(fileName);
+			}
 		}
 
 		MainRun();
