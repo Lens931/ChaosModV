@@ -11,6 +11,7 @@
 #include "Util/Random.h"
 #include "Util/Script.h"
 #include "Util/TryParse.h"
+#include "Util/FiveMCompat.h"
 
 #include <Patterns/Patterns.h>
 #include <json.hpp>

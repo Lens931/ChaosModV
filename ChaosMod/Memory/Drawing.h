@@ -30,8 +30,17 @@ namespace Memory
 
 				AllocateDrawRect     = handle.At(0x56).Into().Get<char *(void *)>();
 
-				auto offsetSDC       = getGameVersion() < eGameVersion::VER_1_0_3407_0 ? 0x92 : 0x97;
-				SetDrawRectCoords    = handle.At(offsetSDC).Into().Get<void(void *, float, float, float, float)>();
+				auto offsetSDC = getGameVersion() < eGameVersion::VER_1_0_3407_0 ? 0x92 : 0x97;
+				if (FiveMCompat::IsFiveMClient())
+				{
+					const auto &offsets = FiveMCompat::GetNativeOffsetProfile();
+					if (offsets.DrawRectSetCoordsOffset >= 0)
+					{
+						// Modern FiveM build-specific callsite offset for SetDrawRectCoords in DRAW_RECT wrapper.
+						offsetSDC = offsets.DrawRectSetCoordsOffset;
+					}
+				}
+				SetDrawRectCoords = handle.At(offsetSDC).Into().Get<void(void *, float, float, float, float)>();
 
 				drawRects            = handle.At(0x32).Into().Get<char>();
 				drawRectsSize        = handle.At(0x2C).Value<int>();

@@ -1,0 +1,37 @@
+{
+  "name": "ChaosModV FiveM compatibility profile",
+  "supported_clients": [
+    {
+      "client": "FiveM",
+      "build": 3717,
+      "status": "supported_with_guards",
+      "native_offsets": {
+        "draw_rect_set_coords_offset": "0x9A",
+        "network_state_offset": "0x1C8"
+      }
+    },
+    {
+      "client": "FiveM",
+      "build": 3757,
+      "status": "supported_with_guards",
+      "native_offsets": {
+        "draw_rect_set_coords_offset": "0x9F",
+        "network_state_offset": "0x1D0"
+      }
+    }
+  ],
+  "build": {
+    "generator": "CMake",
+    "configure": "cmake -S ChaosMod -B build -DCHAOS_ENABLE_FIVEM_37XX=ON",
+    "compile": "cmake --build build --config RelWithDebInfo"
+  },
+  "limitations": [
+    "ScriptHookV.dev hot reload is disabled on FiveM due to loader restrictions.",
+    "Selected low-level hooks (ApplyChangeSetEntry, ModelSpawnBypass) are gated behind compatibility checks on modern FiveM."
+  ],
+  "sanity_checks": [
+    "Log line contains: Compatible client FiveM detected: FiveM 3717",
+    "Log line contains: Compatible client FiveM detected: FiveM 3757",
+    "Main loop survives WAIT/FADE/SET_ENTITY_HEALTH calls without native invocation errors"
+  ]
+}
