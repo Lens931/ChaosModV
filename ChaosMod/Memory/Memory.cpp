@@ -5,6 +5,7 @@
 #include "Effects/EffectThreads.h"
 
 #include "Memory/Hooks/Hook.h"
+#include "Memory/FiveMCompat.h"
 
 #include "Util/Script.h"
 #include "Util/Text.h"
@@ -276,68 +277,56 @@ namespace Memory
 			return handle.At(2).Into().Get<DWORD64 *>();
 		}();
 
-                static auto fallbackToSHV = []() -> bool
-                {
-                        const auto isFiveM = []()
-                        {
-                                // FiveM renamed its core modules in newer builds (e.g. b3570 uses adhesive.dll
-                                // and ros-patches-five.dll). Check for a handful of known module names instead of
-                                // only the legacy gta-net-five.dll so we can correctly detect FiveM across builds.
-                                static const std::array<const wchar_t *, 10> modules = { {
-                                        L"gta-net-five.dll",
-                                        L"gta-core-five.dll",
-                                        L"net-five.dll",
-                                        L"adhesive.dll",
-                                        L"citizen-resources-client.dll",
-                                        L"ros-patches-five.dll",
-                                        // Additional FiveM modules observed in newer builds.
-                                        L"citizen-scripting-gta.dll",
-                                        L"citizen-scripting-core.dll",
-                                        L"citizen-scripting-lua.dll",
-                                        L"asi-five.dll",
-                                } };
+		static auto fallbackToSHV = []() -> bool
+		{
+			bool fallbackToSHV = !globalPtr;
 
-                                return std::any_of(modules.begin(), modules.end(), [](auto module) {
-                                        return GetModuleHandle(module) != nullptr;
-                                });
-                        };
+			if (fallbackToSHV)
+			{
+				LOG("Warning: _globalPtr not found, falling back to SHV's getGlobalPtr");
+			}
+			// HACK: Check for the presence some arbitrary module specific to FiveM
+			// Also check if player is in a mp session if so to check for FiveM sp
+			else if (FiveMCompat::IsFiveM())
+			{
+				const auto clientBuild = FiveMCompat::DetectClientBuild();
+				if (FiveMCompat::IsSupportedClient(clientBuild))
+				{
+					LOG("Compatible client FiveM " << FiveMCompat::ToString(clientBuild)
+					                               << " detected for GetGlobalPtr routing.");
+				}
+				else
+				{
+					LOG("Warning: FiveM client build " << FiveMCompat::ToString(clientBuild)
+					                                   << " not explicitly validated for GetGlobalPtr routing.");
+				}
 
-                        bool fallbackToSHV = !globalPtr;
+				bool modeDetermined = false;
 
-                        if (fallbackToSHV)
-                        {
-                                LOG("Warning: _globalPtr not found, falling back to SHV's getGlobalPtr");
-                        }
-                        // HACK: Check for the presence some arbitrary module specific to FiveM
-                        // Also check if player is in a mp session if so to check for FiveM sp
-                        else if (isFiveM())
-                        {
-                                bool modeDetermined = false;
+				auto handle         = FindPattern("48 8B 0D ? ? ? ? E8 ? ? ? ? 84 C0 74 09 48 8D 15");
+				if (handle.IsValid())
+				{
+					auto _networkObj = handle.At(2).Into().Get<DWORD64>();
+					handle           = FindPattern("83 B9 ? ? 00 00 05 0F 85 ? ? ? ? E9");
+					if (handle.IsValid())
+					{
+						fallbackToSHV  = *reinterpret_cast<DWORD *>(*_networkObj + handle.At(2).Value<WORD>()) == 5;
+						modeDetermined = true;
+					}
+				}
 
-                                auto handle         = FindPattern("48 8B 0D ? ? ? ? E8 ? ? ? ? 84 C0 74 09 48 8D 15");
-                                if (handle.IsValid())
-                                {
-                                        auto _networkObj = handle.At(2).Into().Get<DWORD64>();
-                                        handle           = FindPattern("83 B9 ? ? 00 00 05 0F 85 ? ? ? ? E9");
-                                        if (handle.IsValid())
-                                        {
-                                                fallbackToSHV  = *reinterpret_cast<DWORD *>(*_networkObj + handle.At(2).Value<WORD>()) == 5;
-                                                modeDetermined = true;
-                                        }
-                                }
+				if (!modeDetermined)
+				{
+					LOG("Warning: FiveM detected but could not determine mode, switching to fallback for GetGlobalPtr");
+					fallbackToSHV = true;
+				}
+			}
 
-                                if (!modeDetermined)
-                                {
-                                        LOG("Warning: FiveM detected but could not determine mode, switching to fallback for GetGlobalPtr");
-                                        fallbackToSHV = true;
-                                }
-                        }
+			if (fallbackToSHV)
+				LOG("Warning: FiveM (non-sp) detected, features such as Failsafe will not work!");
 
-                        if (fallbackToSHV)
-                                LOG("Warning: FiveM (non-sp) detected, features such as Failsafe will not work!");
-
-                        return fallbackToSHV;
-                }();
+			return fallbackToSHV;
+		}();
 
 		return fallbackToSHV ? getGlobalPtr(globalId) : (&globalPtr[globalId >> 18 & 0x3F][globalId & 0x3FFFF]);
 	}
