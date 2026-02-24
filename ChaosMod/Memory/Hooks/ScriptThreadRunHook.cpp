@@ -4,6 +4,7 @@
 
 #include "Memory/Hooks/Hook.h"
 #include "Memory/Memory.h"
+#include "Memory/FiveMCompat.h"
 #include "Memory/Script.h"
 
 #include "Components/Failsafe.h"
@@ -73,6 +74,19 @@ __int64 HK_rage__scrThread__Run(rage::scrThread *thread)
 
 static bool OnHook()
 {
+	#if defined(CHAOS_DISABLE_INCOMPATIBLE_FIVEM_HOOKS)
+	if (Memory::FiveMCompat::IsFiveM())
+	{
+		auto clientBuild = Memory::FiveMCompat::DetectClientBuild();
+		if (!Memory::FiveMCompat::IsSupportedClient(clientBuild))
+		{
+			LOG("Skipping rage::scrThread::Run hook on unsupported FiveM client build "
+			    << Memory::FiveMCompat::ToString(clientBuild) << ".");
+			return true;
+		}
+	}
+	#endif
+
 	Handle handle;
 
 	handle = Memory::FindPattern(

@@ -74,3 +74,12 @@ REGISTER_EFFECT(OnStart, OnStop, OnTick, EffectInfo
 The project makes use of clang-format which will mess up the formatting of the list-initialization, thus it's necessary to exempt it using `// clang-format off`.
 
 2. Add the same info to `ConfigApp/Effects.cs`
+
+
+## FiveM 3717/3757 compatibility notes
+
+A low-level compatibility layer for FiveM client builds **3717** and **3757** is included in `ChaosMod/Memory/FiveMCompat.*`.
+
+- Compatibility logs are emitted at startup (look for `Compatible client FiveM ...`).
+- ASI loader support still depends on FiveM host policy/settings; ChaosMod can only detect and log this limitation.
+- Build/test matrix and sanity checks are documented in `docs/fivem_3717_3757_build.json`.

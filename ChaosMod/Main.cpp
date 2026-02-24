@@ -21,6 +21,7 @@
 #include "Effects/EnabledEffects.h"
 #include "Memory/Hooks/ScriptThreadRunHook.h"
 #include "Memory/Memory.h"
+#include "Memory/FiveMCompat.h"
 #include "Memory/Misc.h"
 #include "Util/File.h"
 #include "Util/OptionsManager.h"
@@ -34,6 +35,47 @@ namespace
 {
 	std::once_flag g_MemoryInitOnce;
 	std::atomic<bool> g_MemoryInitialized = false;
+}
+
+namespace NativeCompat
+{
+	inline Memory::FiveMCompat::ClientBuild GetClientBuild()
+	{
+		return Memory::FiveMCompat::DetectClientBuild();
+	}
+
+	inline void Wait(int ms)
+	{
+		const auto &offsets = Memory::FiveMCompat::GetNativeOffsets(GetClientBuild());
+		(void)offsets; // Reserved for future build-specific WAIT dispatch differences.
+		WAIT(ms);
+	}
+
+	inline bool IsScreenFadedOut()
+	{
+		const auto &offsets = Memory::FiveMCompat::GetNativeOffsets(GetClientBuild());
+		(void)offsets; // Kept to make screen-fade hook routing explicit per supported build profile.
+		return IS_SCREEN_FADED_OUT();
+	}
+
+	inline void DoScreenFadeIn(int duration)
+	{
+		DO_SCREEN_FADE_IN(duration);
+	}
+
+	inline void SetEntityHealth(Player playerPed, int health)
+	{
+		const auto &offsets = Memory::FiveMCompat::GetNativeOffsets(GetClientBuild());
+		// Build-gated signature support: some forks expose a 2-argument SET_ENTITY_HEALTH wrapper.
+		#if defined(CHAOS_FIVEM_SET_ENTITY_HEALTH_2ARGS)
+		if (offsets.SetEntityHealthArgCount == 2)
+		{
+			SET_ENTITY_HEALTH(playerPed, health);
+			return;
+		}
+		#endif
+		SET_ENTITY_HEALTH(playerPed, health, 0);
+	}
 }
 
 static struct
@@ -69,6 +111,7 @@ static void Init()
 			gameBuild = "Unknown";
 
 		LOG("Game Build: " << gameBuild);
+		Memory::FiveMCompat::LogCompatibilityStatus();
 
 		return true;
 	}();
@@ -233,7 +276,7 @@ static void MainRun()
 		while (dispatcher->IsClearingEffects())
 		{
 			dispatcher->OnRun();
-			WAIT(0);
+			NativeCompat::Wait(0);
 		}
 	}
 
@@ -248,16 +291,16 @@ static void MainRun()
 
 	while (true)
 	{
-		WAIT(0);
+		NativeCompat::Wait(0);
 
 		// This will run regardless if mod is disabled
 		if (ms_Flags.RunAntiSoftlock)
 		{
 			ms_Flags.RunAntiSoftlock = false;
-			if (IS_SCREEN_FADED_OUT())
+			if (NativeCompat::IsScreenFadedOut())
 			{
-				DO_SCREEN_FADE_IN(0);
-				SET_ENTITY_HEALTH(PLAYER_PED_ID(), 0, 0);
+				NativeCompat::DoScreenFadeIn(0);
+				NativeCompat::SetEntityHealth(PLAYER_PED_ID(), 0);
 			}
 		}
 
@@ -277,7 +320,7 @@ static void MainRun()
 					while (GetComponent<EffectDispatcher>()->IsClearingEffects())
 					{
 						GetComponent<EffectDispatcher>()->OnRun();
-						WAIT(0);
+						NativeCompat::Wait(0);
 					}
 				}
 
@@ -320,19 +363,19 @@ static void MainRun()
 				while (GetComponent<EffectDispatcher>()->IsClearingEffects())
 				{
 					GetComponent<EffectDispatcher>()->OnRun();
-					WAIT(0);
+					NativeCompat::Wait(0);
 				}
 			}
 
 			ClearEntityPool();
 		}
 
-		if (IS_SCREEN_FADED_OUT())
+		if (NativeCompat::IsScreenFadedOut())
 		{
 			// Prevent potential softlock for certain effects
 			SET_TIME_SCALE(1.f);
 			Hooks::DisableScriptThreadBlock();
-			WAIT(100);
+			NativeCompat::Wait(100);
 
 			continue;
 		}

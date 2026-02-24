@@ -1,0 +1,48 @@
+{
+  "name": "ChaosMod FiveM compatibility profile",
+  "supported_clients": [3717, 3757],
+  "build": {
+    "generator": "cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo",
+    "compile": "cmake --build build --config RelWithDebInfo",
+    "artifact": "build/ChaosMod.asi",
+    "defines": [
+      "CHAOS_FIVEM_COMPAT=1",
+      "CHAOS_FIVEM_CLIENT_3717=1",
+      "CHAOS_FIVEM_CLIENT_3757=1"
+    ]
+  },
+  "runtime_notes": {
+    "loader_limitations": [
+      "Modern FiveM can block ASI loading depending on client settings and anticheat policy.",
+      "ChaosMod logs compatibility status but cannot force-enable ASI loader support from plugin code."
+    ],
+    "logs": [
+      "Compatible client FiveM 3717 detected...",
+      "Compatible client FiveM 3757 detected...",
+      "FiveM native offset profile: WAIT=..., SCREEN_FADE=..., SET_ENTITY_HEALTH args=..."
+    ]
+  },
+  "sanity_checks": [
+    {
+      "name": "Native WAIT dispatch",
+      "steps": [
+        "Launch client 3717 and 3757 with ChaosMod.asi",
+        "Enable debug console and verify frame loop continues with no script timeout"
+      ]
+    },
+    {
+      "name": "Screen fade recovery",
+      "steps": [
+        "Trigger anti-softlock flow",
+        "Verify IS_SCREEN_FADED_OUT and DO_SCREEN_FADE_IN wrappers restore view"
+      ]
+    },
+    {
+      "name": "Health native signature",
+      "steps": [
+        "Trigger anti-softlock while faded out",
+        "Verify player health update path does not crash on either build"
+      ]
+    }
+  ]
+}
